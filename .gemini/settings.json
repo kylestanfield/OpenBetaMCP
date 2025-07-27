@@ -1,0 +1,10 @@
+{
+    "mcpServers": { 
+        "openbeta": { 
+            "command": "python",
+            "args": ["-m", "app", "--port", "8080"],
+            "cwd": "./",
+            "timeout": 15000
+        }
+    }
+}
