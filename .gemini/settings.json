@@ -1,10 +1,10 @@
 {
     "mcpServers": { 
         "openbeta": { 
-            "command": "python",
+            "command": ".venv/bin/python3",
             "args": ["-m", "app", "--port", "8080"],
             "cwd": "./",
-            "timeout": 15000
+            "timeout": 150000
         }
     }
 }

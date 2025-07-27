@@ -3,7 +3,10 @@ import json
 from mcp.server.fastmcp import FastMCP
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
+import logging
 
+
+logging.basicConfig(level=logging.INFO)
 
 mcp = FastMCP("openbeta")
 
@@ -54,8 +57,6 @@ query {
     }
 }
 """
-
-
 # helper function to make request/query to openbeta graphQL DB
 def make_request(query):
     json_payload = {'query': query}
@@ -71,31 +72,43 @@ def make_request(query):
         return None
 
 @mcp.tool()
-def get_crags_near_location(lat, lng):
-    query = gql("""query {
-                    cragsNear(
-                        lnglat: {
-                            lat: $lat
-                            lng: $lng
-                        },
-                        maxDistance: 10
-                    ) {
-                        crags {
-                            area_name
-                        }
-                    }
-                }"""
-                )
-    params = {'lat': lat, 'lng': lng}
-    try:
-        result = client.execute(query, variable_values=params)
-        print(result)
-    except Exception as e:
-        print('An error occurred: ', e)
-
+def get_crags_near_location(lat: float, lng: float, maxDistance: int):
+    """Get rock climbing crags near GPS coordinates.
     
+    Args:
+        lat: float value for lattitude
+        lng: float value for longitude
+        maxDistance: radius in meters to find crags within
+    """
+    data = """query {{
+                    cragsNear(
+                        lnglat: {{
+                            lat: {lat}
+                            lng: {lng}
+                        }},
+                        maxDistance: {maxDistance}
+                        includeCrags: true
+                    ) {{
+                        crags {{
+                            area_name
+                        }}
+                    }}
+                }}""".format(lat=lat, lng=lng, maxDistance=maxDistance)
+    query = gql(data)
+    try:
+        result = client.execute(query)
 
-
+        # Check for GraphQL errors in the response itself
+        if 'errors' in result:
+            error_messages = [err['message'] for err in result['errors']]
+            return f"GraphQL API Error: {'; '.join(error_messages)}"
+        
+        # If no errors, return the data
+        #print(result)
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        # Catch any network or client-side exceptions
+        return f"An error occurred during GraphQL execution: {str(e)}"
 
 if __name__ == '__main__':
     mcp.run(transport='stdio')
